@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Neon Run</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{margin:0;background:#000;overflow:hidden;font-family:Arial}
+#oyun{width:100vw;height:100vh;position:relative}
+#puan{position:fixed;top:10px;left:10px;color:#0ff}
+#player{
+  position:absolute;width:18px;height:18px;
+  background:#00ffcc;box-shadow:0 0 12px #00ffcc;
+  border-radius:4px;left:50%;top:70%;
+}
+.enemy{
+  position:absolute;width:18px;height:18px;
+  background:#ff0080;box-shadow:0 0 12px #ff0080;
+  border-radius:50%;
+}
+#joystick{
+  position:fixed;bottom:20px;left:20px;
+  width:90px;height:90px;border:2px solid #0ff;border-radius:50%;
+}
+#stick{
+  position:absolute;width:30px;height:30px;
+  background:#0ff;border-radius:50%;left:30px;top:30px;
+}
+</style>
+</head>
+<body>
+
+<div id="puan">Puan: 0</div>
+<div id="oyun"><div id="player"></div></div>
+<div id="joystick"><div id="stick"></div></div>
+
+<script>
+const oyun=document.getElementById("oyun");
+const player=document.getElementById("player");
+const stick=document.getElementById("stick");
+let x=innerWidth/2,y=innerHeight*0.7,vx=0,vy=0,puan=0;
+
+setInterval(()=>{
+  x+=vx; y+=vy;
+  x=Math.max(0,Math.min(innerWidth-18,x));
+  y=Math.max(0,Math.min(innerHeight-18,y));
+  player.style.left=x+"px";
+  player.style.top=y+"px";
+},20);
+
+document.getElementById("joystick").addEventListener("touchmove",e=>{
+  const r=e.currentTarget.getBoundingClientRect();
+  const dx=e.touches[0].clientX-r.left-45;
+  const dy=e.touches[0].clientY-r.top-45;
+  vx=dx*0.12; vy=dy*0.12;
+  stick.style.left=(dx+45)+"px";
+  stick.style.top=(dy+45)+"px";
+});
+
+function enemy(){
+  const e=document.createElement("div");
+  e.className="enemy";
+  e.style.left=Math.random()*(innerWidth-20)+"px";
+  e.style.top="-20px";
+  oyun.appendChild(e);
+  const iv=setInterval(()=>{
+    e.style.top=(e.offsetTop+4)+"px";
+    const a=player.getBoundingClientRect(),b=e.getBoundingClientRect();
+    if(a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top){
+      puan++; document.getElementById("puan").innerText="Puan: "+puan;
+      e.remove(); clearInterval(iv);
+    }
+    if(e.offsetTop>innerHeight){ e.remove(); clearInterval(iv); }
+  },30);
+}
+setInterval(enemy,900);
+</script>
+
+</body>
+</html>
