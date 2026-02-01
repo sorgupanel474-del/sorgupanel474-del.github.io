@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Neon Açık Hava</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{margin:0;background:linear-gradient(#0a2a43,#0e4d6d);overflow:hidden;font-family:Arial}
+.neon{color:#00eaff;text-shadow:0 0 10px #00eaff,0 0 25px #00eaff}
+#menu{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;background:rgba(0,0,0,.7);z-index:10
+}
+#menu button{padding:14px 28px;font-size:18px;border-radius:12px;border:none}
+
+#hud{position:fixed;top:8px;left:8px;color:#0ff;z-index:5}
+
+#oyun{width:100vw;height:100vh;position:relative}
+
+#player{
+  position:absolute;width:22px;height:36px;
+  background:#ffd1a4;border-radius:6px;
+}
+#player:after{
+  content:"";position:absolute;top:-10px;left:3px;
+  width:16px;height:16px;background:#ffcc99;border-radius:50%;
+}
+
+.enemy{
+  position:absolute;width:22px;height:36px;background:#f55;border-radius:6px;
+}
+.enemy:after{
+  content:"";position:absolute;top:-10px;left:3px;
+  width:16px;height:16px;background:#f88;border-radius:50%;
+}
+
+.boss{
+  position:absolute;width:40px;height:60px;background:#ff8800;border-radius:8px;
+  box-shadow:0 0 20px #ff8800;
+}
+.boss:after{
+  content:"";position:absolute;top:-16px;left:8px;
+  width:24px;height:24px;background:#ffb366;border-radius:50%;
+}
+
+.bullet{
+  position:absolute;width:6px;height:10px;background:#fff;
+  box-shadow:0 0 8px #fff;border-radius:3px;
+}
+
+#joy{
+  position:fixed;bottom:20px;left:20px;
+  width:90px;height:90px;border:2px solid #0ff;border-radius:50%
+}
+#stick{
+  position:absolute;width:30px;height:30px;background:#0ff;
+  border-radius:50%;left:30px;top:30px
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <h1 class="neon">OYUNUNA HOŞGELDİN</h1>
+  <button onclick="basla()">BAŞLA</button>
+</div>
+
+<div id="hud">Level: <span id="lv">1</span></div>
+<div id="oyun"><div id="player"></div></div>
+
+<div id="joy"><div id="stick"></div></div>
+
+<script>
+const oyun=document.getElementById("oyun");
+const player=document.getElementById("player");
+const stick=document.getElementById("stick");
+const menu=document.getElementById("menu");
+const lvY=document.getElementById("lv");
+
+let x=innerWidth/2,y=innerHeight/2,vx=0,vy=0;
+let level=1,enemies=[],boss=null;
+let firing=false;
+
+function basla(){
+  menu.style.display="none";
+  spawnLevel();
+}
+
+setInterval(()=>{
+  x+=vx; y+=vy;
+  x=Math.max(0,Math.min(innerWidth-22,x));
+  y=Math.max(0,Math.min(innerHeight-36,y));
+  player.style.left=x+"px"; player.style.top=y+"px";
+},20);
+
+/* KAYMAYAN JOYSTICK */
+document.getElementById("joy").addEventListener("touchmove",e=>{
+  const r=e.currentTarget.getBoundingClientRect();
+  let dx=e.touches[0].clientX-r.left-45;
+  let dy=e.touches[0].clientY-r.top-45;
+  dx=Math.max(-30,Math.min(30,dx));
+  dy=Math.max(-30,Math.min(30,dy));
+  vx=dx*0.15; vy=dy*0.15;
+  stick.style.left=(dx+45)+"px";
+  stick.style.top=(dy+45)+"px";
+});
+document.getElementById("joy").addEventListener("touchend",()=>{
+  vx=0;vy=0;stick.style.left="30px";stick.style.top="30px";
+});
+
+/* BASILI TUTARAK ATEŞ */
+oyun.addEventListener("touchstart",()=>firing=true);
+oyun.addEventListener("touchend",()=>firing=false);
+
+setInterval(()=>{
+  if(!firing) return;
+  const b=document.createElement("div");
+  b.className="bullet";
+  b.style.left=(x+8)+"px"; b.style.top=(y-5)+"px";
+  oyun.appendChild(b);
+  const iv=setInterval(()=>{
+    b.style.top=(b.offsetTop-10)+"px";
+    enemies.forEach((e,i)=>{
+      if(hit(b,e)){ e.remove(); enemies.splice(i,1); b.remove(); clearInterval(iv); checkClear(); }
+    });
+    if(boss && hit(b,boss)){ boss.hp--; b.remove(); clearInterval(iv);
+      if(boss.hp<=0){ boss.remove(); boss=null; level++; spawnLevel(); }
+    }
+    if(b.offsetTop<0){ b.remove(); clearInterval(iv); }
+  },30);
+},150);
+
+/* LEVEL */
+function spawnLevel(){
+  lvY.textContent=level;
+  enemies=[]; boss=null;
+  for(let i=0;i<4+level;i++){
+    const e=document.createElement("div");
+    e.className="enemy";
+    e.style.left=Math.random()*(innerWidth-30)+"px";
+    e.style.top=Math.random()*(innerHeight-100)+"px";
+    oyun.appendChild(e); enemies.push(e);
+  }
+}
+
+function checkClear(){
+  if(enemies.length===0){
+    boss=document.createElement("div");
+    boss.className="boss"; boss.hp=6+level*3;
+    boss.style.left=(innerWidth/2-20)+"px";
+    boss.style.top="40px";
+    oyun.appendChild(boss);
+  }
+}
+
+function hit(a,b){
+  const r1=a.getBoundingClientRect(),r2=b.getBoundingClientRect();
+  return r1.left<r2.right&&r1.right>r2.left&&r1.top<r2.bottom&&r1.bottom>r2.top;
+}
+</script>
+
+</body>
+</html>
